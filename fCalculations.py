@@ -58,25 +58,30 @@ def myf_x_vec(sys_param, constellation, symbol_indices):
     return x_vec
 
 
-def myf_y_vec(sys_param, channel, param_rand_noise, s_vec):      # receive signal function
+def myf_y_vec(sys_param,channel,param_y_vec):
+     # receive signal function
 
     # Parameters #
 
-    RxAnt = sys_param["Nr"]
+    Nr = sys_param["Nr"]
 
     No = sys_param["NO"]
 
     H_mat = channel["H_mat"]
 
-    seed_seq = param_rand_noise["seed_seq"]
+    seed_seq = param_y_vec["seed_seq"]
+
+    s_vec = param_y_vec["s_vec"]
 
 
     # Function #
 
     rng = np.random.default_rng(seed=seed_seq)
-    z_vec = rng.normal(loc=0, scale=np.sqrt(No/2), size=(RxAnt, 1)) + 1j * rng.normal(loc=0, scale=np.sqrt(No/2), size=(RxAnt, 1))
+
+    z_vec = rng.normal(loc=0, scale=np.sqrt(No/2), size=(Nr, 1)) + 1j * rng.normal(loc=0, scale=np.sqrt(No/2), size=(Nr, 1))
+
     y_vec = H_mat@s_vec + z_vec
-    #print("y_vec is = ", y_vec)
+
 
     return y_vec
 
@@ -87,46 +92,72 @@ def myf_x_vec_est(solutions,y_vec):
     return x_vec_est
 
 
-def myf_Num_errors(sys_param, constellation, x_vec_est, symbol_indices, Ns_opt):
+def myf_Num_errors(sys_param, constellation, param_Num_errors):
 
     # Parameters #
 
     constellation_type = sys_param["constellation_type"]
+
     constellation_bits = constellation["constellation_bits"]
+
+    Ns_opt = param_Num_errors["Ns_opt"]
+
+    x_vec_est = param_Num_errors["x_vec_est"]
+
+    symbol_indices = param_Num_errors["symbol_indices"]
+
+
 
     # Function #
 
     symbol_indices_dec = np.zeros(Ns_opt)
 
     for ind in range(0, Ns_opt):
+
         if (constellation_type=="BPSK"):
+
             if(np.real(x_vec_est[ind][0])<0):
+
                 symbol_indices_dec[ind] = 0
 
             elif (np.real(x_vec_est[ind][0])>=0):
+
                 symbol_indices_dec[ind] = 1
 
         elif (constellation_type == "QPSK"):
+
             if((np.real(x_vec_est[ind][0])<0) and (np.imag(x_vec_est[ind][0])<0)):
+
                 symbol_indices_dec[ind] = 0
+
             elif((np.real(x_vec_est[ind][0])<0) and (np.imag(x_vec_est[ind][0])>=0)):
+
                 symbol_indices_dec[ind] = 1
+
             elif ((np.real(x_vec_est[ind][0]) >= 0) and (np.imag(x_vec_est[ind][0]) < 0)):
+
                 symbol_indices_dec[ind] = 2
+
             elif ((np.real(x_vec_est[ind][0]) >= 0) and (np.imag(x_vec_est[ind][0]) >= 0)):
+
                 symbol_indices_dec[ind] = 3
 
     # Counting errors
     Num_symbol_errors = 0
+
     Num_bit_errors = 0
+
     for ind in range(0, Ns_opt):
+
         if (symbol_indices[ind] != symbol_indices_dec[ind]):
+
             Num_symbol_errors = Num_symbol_errors + 1   # counting number of symbol error
         
-            # This is just find out error bit
+            # Counting bit errors 
+
             Num_bit_errors = Num_bit_errors + np.sum(np.abs(constellation_bits[int(symbol_indices[ind])] - \
                                                             constellation_bits[int(symbol_indices_dec[ind])]))
-            # print(" bit errors =", bit_errors)
+            
 
     Num_errors = {}
     Num_errors["Num_symbol_errors"] = Num_symbol_errors

@@ -79,10 +79,8 @@ for ind1 in tqdm(range(0,Num_samples)):
 
             sys_param["NO"] = sys_param["Es"]/sys_param["EsoverNO"] # Noise energy [Joule]
 
-            
-        # print("P_rx : ", sys_param["P_rx"])
 
-        P_mat, G_mat, Ns = myf_P(sys_param)
+        P_mat, G_mat, Ns_opt = myf_P(sys_param)
 
         s_vec = P_mat @ x_vec
 
@@ -94,7 +92,7 @@ for ind1 in tqdm(range(0,Num_samples)):
 
         param_y_vec["s_vec"] = s_vec
 
-        y_vec = myf_y_vec(sys_param,channel,param_y_vec,s_vec)
+        y_vec = myf_y_vec(sys_param,channel,param_y_vec)
 
         # print(y_vec)
 
@@ -112,11 +110,13 @@ for ind1 in tqdm(range(0,Num_samples)):
 
         param_Num_errors["y_vec"] = y_vec
 
-        Num_errors = myf_Num_errors(sys_param, constellation, x_vec_est, symbol_indices, Ns)
+        param_Num_errors["x_vec_est"] = x_vec_est
+
+        Num_errors = myf_Num_errors(sys_param, constellation, param_Num_errors)
 
         Num_errors_bit_temp[0][ind2] = Num_errors["Num_bit_errors"]
 
-        Num_bits_eff_temp[0][ind2] = Ns * np.log2(sys_param["constellation_size"])
+        Num_bits_eff_temp[0][ind2] = Ns_opt * np.log2(sys_param["constellation_size"])
 
         ### Algorithm 2 :  Receive filter ZF
 
@@ -132,11 +132,13 @@ for ind1 in tqdm(range(0,Num_samples)):
 
         param_Num_errors["y_vec"] = y_vec
 
-        Num_errors = myf_Num_errors(sys_param, constellation, x_vec_est, symbol_indices, Ns)
+        param_Num_errors["x_vec_est"] = x_vec_est
+
+        Num_errors = myf_Num_errors(sys_param, constellation, param_Num_errors)
 
         Num_errors_bit_temp[1][ind2] = Num_errors["Num_bit_errors"]
 
-        Num_bits_eff_temp[1][ind2] = Ns * np.log2(sys_param["constellation_size"])
+        Num_bits_eff_temp[1][ind2] = Ns_opt * np.log2(sys_param["constellation_size"])
 
         ###Algorithm 3 :  Receive filter MMSE #########
 
@@ -152,11 +154,13 @@ for ind1 in tqdm(range(0,Num_samples)):
 
         param_Num_errors["y_vec"] = y_vec
 
-        Num_errors = myf_Num_errors(sys_param, constellation, x_vec_est, symbol_indices, Ns)
+        param_Num_errors["x_vec_est"] = x_vec_est
+
+        Num_errors = myf_Num_errors(sys_param, constellation, param_Num_errors)
 
         Num_errors_bit_temp[2][ind2] = Num_errors["Num_bit_errors"]
 
-        Num_bits_eff_temp[2][ind2] = Ns * np.log2(sys_param["constellation_size"])
+        Num_bits_eff_temp[2][ind2] = Ns_opt * np.log2(sys_param["constellation_size"])
 
         ## Algorithm 4 : Transmit matched Filter
 
@@ -170,7 +174,13 @@ for ind1 in tqdm(range(0,Num_samples)):
 
         param_y_vec["s_vec"] = s_vec
 
-        y_vec = myf_y_vec(sys_param,channel,param_y_vec,s_vec)
+        y_vec = myf_y_vec(sys_param,channel,param_y_vec)
+
+        solutions = {}
+
+        solutions["G_mat"] = G_mat
+
+        x_vec_est = myf_x_vec_est(solutions,y_vec)
 
         param_Num_errors = {}
 
@@ -180,17 +190,11 @@ for ind1 in tqdm(range(0,Num_samples)):
 
         param_Num_errors["y_vec"] = y_vec
 
-        Ns_opt = param_Num_errors["Ns_opt"]
+        param_Num_errors["x_vec_est"] = x_vec_est
 
-        G_tx = G_mat
+        
 
-        solutions = {}
-
-        solutions["G_mat"] = G_tx
-
-        x_vec_est = myf_x_vec_est(solutions,y_vec)
-
-        Num_errors = myf_Num_errors(sys_param, constellation, x_vec_est, symbol_indices, Ns_opt)
+        Num_errors = myf_Num_errors(sys_param, constellation, param_Num_errors)
 
         Num_errors_bit_temp[3][ind2] = Num_errors["Num_bit_errors"]
 
@@ -208,7 +212,13 @@ for ind1 in tqdm(range(0,Num_samples)):
 
         param_y_vec["s_vec"] = s_vec
 
-        y_vec = myf_y_vec(sys_param,channel,param_y_vec,s_vec)
+        y_vec = myf_y_vec(sys_param,channel,param_y_vec)
+
+        solutions = {}
+
+        solutions["G_mat"] = G_mat
+
+        x_vec_est = myf_x_vec_est(solutions,y_vec)
 
         param_Num_errors = {}
 
@@ -218,17 +228,9 @@ for ind1 in tqdm(range(0,Num_samples)):
 
         param_Num_errors["y_vec"] = y_vec
 
-        Ns_opt = param_Num_errors["Ns_opt"]
+        param_Num_errors["x_vec_est"] = x_vec_est
 
-        G_tx = G_mat
-
-        solutions = {}
-
-        solutions["G_mat"] = G_tx
-
-        x_vec_est = myf_x_vec_est(solutions,y_vec)
-
-        Num_errors = myf_Num_errors(sys_param, constellation, x_vec_est, symbol_indices, Ns_opt)
+        Num_errors = myf_Num_errors(sys_param, constellation, param_Num_errors)
 
         Num_errors_bit_temp[4][ind2] = Num_errors["Num_bit_errors"]
 
@@ -246,7 +248,15 @@ for ind1 in tqdm(range(0,Num_samples)):
 
         param_y_vec["s_vec"] = s_vec
 
-        y_vec = myf_y_vec(sys_param,channel,param_y_vec,s_vec)
+        y_vec = myf_y_vec(sys_param,channel,param_y_vec)
+
+        G_tx = G_mat
+
+        solutions = {}
+
+        solutions["G_mat"] = G_mat
+
+        x_vec_est = myf_x_vec_est(solutions,y_vec)
 
         param_Num_errors = {}
 
@@ -256,17 +266,9 @@ for ind1 in tqdm(range(0,Num_samples)):
 
         param_Num_errors["y_vec"] = y_vec
 
-        Ns_opt = param_Num_errors["Ns_opt"]
+        param_Num_errors["x_vec_est"] = x_vec_est
 
-        G_tx = G_mat
-
-        solutions = {}
-
-        solutions["G_mat"] = G_tx
-
-        x_vec_est = myf_x_vec_est(solutions,y_vec)
-
-        Num_errors = myf_Num_errors(sys_param, constellation, x_vec_est, symbol_indices, Ns_opt)
+        Num_errors = myf_Num_errors(sys_param, constellation, param_Num_errors)
 
         Num_errors_bit_temp[5][ind2] = Num_errors["Num_bit_errors"]
 
