@@ -18,10 +18,6 @@ def myf_sys_param():
 
     sys_param["Es"] = 2
 
-    # sys_param["P_rx"] = np.eye(2)
-
-    # sys_param["G_tx"] = np.eye(2)
-
     sys_param["EsoverNO_dB"] = 5 # Es/N0 [dB]
 
     sys_param["EsoverNO"] = 10**(sys_param["EsoverNO_dB"]/10) # [no unit]
@@ -30,7 +26,6 @@ def myf_sys_param():
 
     sys_param["Rs"] = np.eye(sys_param["Ns"], dtype=np.float32)
 
-    # sys_param["Rn"] = sys_param["NO"] * np.eye(2)
 
     sys_param["constellation_type"] = "QPSK"
 

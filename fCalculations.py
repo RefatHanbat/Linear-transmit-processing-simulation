@@ -2,6 +2,8 @@ import time
 
 import numpy as np
 
+from scipy.linalg import sqrtm
+
 '''
 fCalculations.py
 Written by: Refat khan
@@ -165,72 +167,123 @@ def myf_Num_errors(sys_param, constellation, param_Num_errors):
 
     return Num_errors
 
-     
+def myf_J_rx(sys_param,channel,P_mat):
+
+    Rs = sys_param["Rs"] 
+
+    Ns = sys_param["Ns"]
+
+    H_mat = channel["H_mat"] 
+
+    H_mat_H = np.transpose(np.conjugate(H_mat))
+
+    P_mat = P_mat
+
+    P_mat_H = np.transpose(np.conjugate(P_mat))
+
+    Rn = sys_param["NO"] * np.eye(Ns, dtype=np.float32)
+
+    Rn_inverse = np.linalg.inv(Rn)
+
+    Rs_sqrt = sqrtm(Rs)
+
+    Rs_sqrt_H = np.transpose(np.conjugate(Rs_sqrt))
+
+    J_mat = Rs_sqrt_H @ P_mat_H @ H_mat_H @ Rn_inverse @ H_mat @ P_mat @ Rs_sqrt
+
+    solution = {}
+
+    solution["J_mat"] = J_mat
+
+    return solution
+
+def myf_J_tx(sys_param,channel,G_mat):
+
+    E_tr = sys_param["Es"]
+
+    Ns = sys_param["Ns"]
+
+    G_mat = G_mat
+
+    G_mat_H = np.transpose(np.conjugate(G_mat))
+
+    H_mat = channel["H_mat"]
+
+    Rn = sys_param["NO"] * np.eye(Ns, dtype=np.float32)
+
+    H_mat_H = np.transpose(np.conjugate(H_mat))
+
+    J_mat = (G_mat @ H_mat @ H_mat_H @ G_mat_H) * (np.divide(E_tr,np.trace(G_mat @ Rn @ G_mat_H)))
+
+
+    solutions = {}
+
+    solutions["J_mat"] = J_mat
+
+    return solutions
+
+import numpy as np
+
+def myf_compute_trace(H_mat, G_mat, Rs, Ns, lambda_val):
+    
+    H_mat_H = np.transpose(np.conjugate(H_mat))  
+
+    G_mat_H = np.transpose(np.conjugate(G_mat))  
+
+    I_N = np.eye(Ns, dtype=H_mat.dtype)  
+
+    
+    inverse_term = np.linalg.inv(H_mat_H @ G_mat_H @ G_mat @ H_mat + lambda_val * I_N)
+
+    
+    squared_inverse = inverse_term @ inverse_term
+
+   
+    trace_value = np.abs(np.trace(squared_inverse @ H_mat_H @ G_mat_H @ Rs @ G_mat @ G_mat_H))
+
+    return trace_value
+
+def myf_find_optimal_lambda(sys_param, channel, G_mat, target_value, lambda_min=1e-6, lambda_max=1e2, tolerance=1e-6):
+    
+    Rs = sys_param["Rs"]
+
+    H_mat = channel["H_mat"]
+
+    Ns = sys_param["Ns"]
+
+    
+    while lambda_max - lambda_min > tolerance:
+
+        lambda_mid = (lambda_min + lambda_max) / 2.0
+
+        
+        func_value = myf_compute_trace(H_mat, G_mat, Rs, Ns, lambda_mid)
+
+        # print(f"λ = {lambda_mid:.6f}, Trace = {func_value:.6f}")
+
+        
+        if func_value > target_value:
+
+            lambda_min = lambda_mid  # Move the lower bound up
+
+        else:
+
+            lambda_max = lambda_mid  # Move the upper bound down
+
+    
+    optimal_lambda = (lambda_min + lambda_max) / 2.0
+
+    # print(f"Optimal λ found: {optimal_lambda:.6f}")
+
+    return optimal_lambda
 
 
 
-# def myf_Num_errors(sys_param,constellation,x_vec_est,param_Num_errors):
 
-#     constellation_type = sys_param["constellation_type"]
+    
 
-#     constellation_bits = constellation["constellation_bits"]
 
-#     symbol_indices = param_Num_errors["symbol_indices"]
 
-#     Ns_opt = param_Num_errors["Ns_opt"]
-
-#     symbol_indices_dec = np.zeros(Ns_opt)
-
-#     for ind in range(0, Ns_opt):
-
-#         if (constellation_type=="BPSK"):
-
-#             if(np.real(x_vec_est[ind][0]) < 0 ):
-
-#                 symbol_indices_dec[ind] = 0
-
-#             elif (np.real(x_vec_est[ind][0])>=0):
-
-#                 symbol_indices_dec[ind] = 1
-
-#         elif (constellation_type == "QPSK"):
-
-#             if((np.real(x_vec_est[ind][0])< 0 ) and ((np.imag(x_vec_est[ind][0]) < 0))):
-
-#                 symbol_indices_dec[ind] = 0
-
-#             elif((np.real(x_vec_est[ind][0])<0) and ((np.imag(x_vec_est[ind][0])>=0))):
-
-#                 symbol_indices_dec[ind] = 1
-
-#             elif ((np.real(x_vec_est[ind][0]) >= 0) and ((np.imag(x_vec_est[ind][0]) < 0))):
-
-#                 symbol_indices_dec[ind] = 2
-
-#             elif ((np.real(x_vec_est[ind][0]) >= 0) and ((np.imag(x_vec_est[ind][0]) >= 0))):
-
-#                 symbol_indices_dec[ind] = 3
-
-#     Num_errors_symbol = 0
-
-#     Num_errors_bit = 0
-
-#     for ind in range(0,Ns_opt):
-
-#         if(symbol_indices[ind] != symbol_indices_dec[ind]):
-
-#             Num_errors_symbol = Num_errors_symbol + 1
-
-#             Num_errors_bit = Num_errors_bit + np.sum(np.abs(constellation_bits[int(symbol_indices[ind])]\
-                                                            
-#                             - constellation_bits[int(symbol_indices_dec[ind])]))
-#     Num_errors = {}
-
-#     Num_errors["Num_errors_symbol"] = Num_errors_symbol
-
-#     Num_errors["Num_errors_bit"] = Num_errors_bit
-            
-#     return Num_errors
 
     
 

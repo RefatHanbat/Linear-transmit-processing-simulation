@@ -104,3 +104,159 @@ def myf_algorithm_2(sys_param,channel,G_mat, mode="TxMF"):
     solutions["P_mat"] = P_mat
 
     return solutions
+
+def myf_algorithm_3(sys_param,J_rx, mode="RxMF"):
+
+    Rs = sys_param["Rs"]
+
+    J_rx = J_rx["J_mat"]
+
+    Ns = sys_param["Ns"]
+
+    if (mode == "RxMF"):
+
+        nominator = np.trace(J_rx @ Rs) * np.trace(J_rx @ Rs)
+
+        denominator = np.trace((J_rx @ J_rx + J_rx)@Rs)
+
+        epsilon_mat = np.divide(nominator,denominator)
+
+        epsilon_mat = np.trace(Rs) - epsilon_mat
+
+    elif(mode=="RxZF"):
+
+        nominator = np.trace(Rs) * np.trace(Rs)
+
+        denominator = np.trace(Rs) + np.trace(np.linalg.inv(J_rx)@Rs)
+
+        epsilon_mat = np.trace(Rs) - np.divide(nominator,denominator)
+
+    elif(mode == "RxWF"):
+
+        right_part = np.trace(np.linalg.inv(J_rx + np.eye(Ns,dtype=np.float32))@ J_rx @Rs)
+
+        epsilon_mat = np.trace(Rs) - right_part
+
+
+    solutions = {}
+
+    solutions["epsilon_mat"] = epsilon_mat
+
+    return solutions
+
+def myf_algorithm_4(sys_param,J_tx, mode="RxMF"):
+
+    Rs = sys_param["Rs"]
+
+    Ns = sys_param["Ns"]
+
+    J_tx = J_tx["J_mat"]
+
+    if(mode == "TxMF"):
+
+        nominator = (np.trace(J_tx @ Rs) * np.trace(J_tx@ Rs)) 
+
+        dominator = np.trace((J_tx @ J_tx + J_tx) @ Rs)
+
+        epsilon_mat = np.trace(Rs) - np.divide(nominator,dominator)
+
+    elif(mode == "TxZF"):
+
+        nominator = np.trace(Rs) * np.trace(Rs)
+
+        denominator = np.trace(Rs) + np.trace(np.linalg.inv(J_tx)@Rs)
+
+        epsilon_mat = np.trace(Rs) - np.divide(nominator,denominator)
+
+
+    elif(mode == "TxWF"):
+
+        right_part = np.trace(np.linalg.inv((J_tx + np.eye(Ns, dtype=np.float32))) @ J_tx @ Rs)
+
+        epsilon_mat = np.trace(Rs) - right_part
+
+    solutions = {}
+
+    solutions["epsilon_mat"] = epsilon_mat
+
+    return solutions
+
+def myf_algorithm_5(sys_param,channel,G_mat,optimal_lambda):
+
+    Ns = sys_param["Ns"]
+
+    H_mat = channel["H_mat"]
+
+    H_mat_H = np.transpose(np.conjugate(H_mat))
+
+    G_mat = G_mat
+
+    G_mat_H = np.transpose(np.conjugate(G_mat))
+
+    optimal_lambda = optimal_lambda
+
+
+    I_N = np.eye(Ns, dtype=np.float32)
+
+    inverse_part = np.linalg.inv(H_mat_H@G_mat_H@G_mat@H_mat + optimal_lambda * I_N)
+
+    P_mat = inverse_part @ H_mat_H @ G_mat_H
+
+    solutions = {}
+
+    solutions["P_mat"] = P_mat
+
+    return solutions
+
+def myf_algorithm_6(sys_param,channel,G_mat, E_tr, Khi):
+
+    Ns = sys_param["Ns"]
+
+    Rs = sys_param["Rs"]
+
+    E_tr = E_tr
+
+    H_mat = channel["H_mat"]
+
+    H_mat_H = np.transpose(np.conjugate(H_mat))
+
+    G_tx = G_mat
+
+    G_tx_H = np.transpose(np.conjugate(G_tx))
+
+    Rn = sys_param["NO"] * np.eye(Ns, dtype=np.float32)
+
+    I_N = np.eye(Ns, dtype=np.float32)
+
+    Khi = Khi
+
+    F = H_mat_H @ G_tx_H @ G_tx @ H_mat + Khi * I_N
+
+    F_inv = np.linalg.inv(F)
+
+    F_inv_squared = F_inv @ F_inv
+
+    beta_TxWF = np.sqrt(np.divide((E_tr),(np.trace(F_inv_squared @ H_mat_H @ G_tx_H @Rs @G_tx @ H_mat))))
+
+    P_mat = beta_TxWF * (F_inv @ H_mat_H @ G_tx_H)
+
+    solutions = {}
+
+    solutions["P_mat"] = P_mat
+
+    return solutions
+
+
+
+
+
+
+
+
+
+
+
+
+       
+
+
